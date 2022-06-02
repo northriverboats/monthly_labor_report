@@ -1,0 +1,4 @@
+click
+openpyxl
+PySimpleGUI
+python-dotenv

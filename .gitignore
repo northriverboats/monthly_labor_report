@@ -1,0 +1,12 @@
+.direnv/*
+venv/*
+dist/*
+build/*
+__pycache__/*
+*.pyc
+.env
+.xlsx
+*.pickle
+*.vscode
+*.egg-info/
+.*.swp
