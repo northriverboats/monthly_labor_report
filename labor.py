@@ -9,6 +9,7 @@ notes: build list of boats with punches in the last month
 """
 
 import os
+import sys
 from decimal import Decimal
 from datetime import datetime
 from datetime import timedelta
@@ -47,7 +48,7 @@ LEFT JOIN  job on tp.job_id = job.job_id
 LEFT JOIN  task on tp.task_id = task.task_id
      JOIN  empMain em ON tp.employee_id = em.employee_id
      JOIN  tblDepartment dp ON tp.department_id  = dp.department_id
-    WHERE  tp.inpunch_dt BETWEEN '%s' AND '2022-05-31 23:59:59'
+    WHERE  tp.inpunch_dt BETWEEN '%s' AND '%s'
       AND  tp.active_yn = 1
       AND  task.taskname IN ('1 Boat Builder', '2 Canvas and Upholstery', '4 Paint', '5 Outfitting', '5 Outfitting - Floorboard')
   --  AND  job.jobname IN ('18056 122')
@@ -63,7 +64,7 @@ def get_boats(host, database, user, password, start, finish):
                        tds_version=0x70000000,
                       ) as conn:
         with conn.cursor() as cur:
-            _ = cur.execute(SQL % start)
+            _ = cur.execute(SQL % (start, finish))
             rows = cur.fetchall()
     return rows
 
@@ -105,9 +106,8 @@ def cli(host, database, user, password, path):
     start = '2021-05-01 00:00:00'
     finish = '2022-05-31 23:59:59'
     rows = get_boats(host, database, user, password, start, finish)
-    # rows = read_firebird_database(host)
-    print(len(rows))
-    print(path)
+    _ = (path, rows)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
