@@ -118,49 +118,56 @@ def get_hulls(rows, month, year):
                     row[2][0] < '6'])
 
 def build_time(rows, hulls):
-  """build hulls/employees/hours for boats with last month activity"""
-  boats = {'total': Decimal(0)}
-  for row in rows:
-    hull = row[2]
-    dept = row[0]
-    employee = row[4] + ', ' + row[5]
-    if row[8]:
-        punch = Decimal(row[8])
-    else:
-        punch = Decimal(0)
-    type = row[10]
-    if hull not in hulls:
-        continue
-    if hull not in boats:
-        boats[hull] = {'total': Decimal(0)}
-    if dept not in boats[hull]:
-        boats[hull][dept] = {'total': Decimal(0)}
-    if employee not in boats[hull][dept]:
-        boats[hull][dept][employee] = Decimal(0)
-    if punch == 1:
-        boats[hull][dept][employee] -= punch
-        boats[hull][dept]['total'] -= punch
-        boats[hull]['total'] -= punch
-        boats['total'] -= punch
-    else:
-        boats[hull][dept][employee] += punch
-        boats[hull][dept]['total'] += punch
-        boats[hull]['total'] += punch
-        boats['total'] += punch
+    """build hulls/employees/hours for boats with last month activity"""
+    boats = {'total': Decimal(0)}
+    for row in rows:
+      hull = row[2]
+      dept = row[0]
+      employee = row[4] + ', ' + row[5]
+      if row[8]:
+          punch = Decimal(row[8])
+      else:
+          punch = Decimal(0)
+      type = row[10]
+      if hull not in hulls:
+          continue
+      if hull not in boats:
+          boats[hull] = {'total': Decimal(0)}
+      if dept not in boats[hull]:
+          boats[hull][dept] = {'total': Decimal(0)}
+      if employee not in boats[hull][dept]:
+          boats[hull][dept][employee] = Decimal(0)
+      if punch == 1:
+          boats[hull][dept][employee] -= punch
+          boats[hull][dept]['total'] -= punch
+          boats[hull]['total'] -= punch
+          boats['total'] -= punch
+      else:
+          boats[hull][dept][employee] += punch
+          boats[hull][dept]['total'] += punch
+          boats[hull]['total'] += punch
+          boats['total'] += punch
+  
+    for boat in sorted(boats):
+        if boat != 'total':
+            print(boat)
+            for dept in boats[boat]:
+                if dept != 'total':
+                    print(f"    {dept}")
+                    for employee in boats[boat][dept]:
+                        if employee != 'total':
+                            print(f"        {employee:24.24}  {boats[boat][dept][employee]:9.2f}")
+                    print(f"        {'SUBTOTAL '+dept:24.24}  {boats[boat][dept]['total']:9.2f}")
+                print(f"    {'TOTAL '+boat:28.28}  {boats[boat]['total']:9.2f}")
+        print(f"{'GRAND TOTAL':32.32}  {boats['total']:9.2f}")
 
-    
+    return boats
 
-  for boat in sorted(boats):
-      print(boat)
-      for dept in boats[boat]:
-          if dept != 'total':
-              print(f"    {dept}")
-              for employee in boats[boat][dept]:
-                  if employee != 'total':
-                      print(f"        {employee:24.24}  {boats[boat][dept][employee]:9.2f}")
-              print(f"        {'SUBTOTAL '+dept:24.24}  {boats[boat][dept]['total']:9.2f}")
-          print(f"    {'TOTAL '+boat:28.28}  {boats[boat]['total']:9.2f}")
-      print(f"{'GRAND TOTAL':32.32}  {total:9.2f}")
+def write_sheet(boats):
+    """write sheet to disk"""
+    excel = ExcelOpenDocument()
+    excel.new('test.xlsx')
+    excel.save()
 
 
 @click.command()
@@ -205,7 +212,8 @@ def cli(host, database, user, password, path):
                                        and row[2]
                                        and row[2][0] < '6'])
     hulls = sorted(get_hulls(rows, month, year))
-    build_time(rows, hulls)
+    boats = build_time(rows, hulls)
+    write_sheet(boats)
     _ = (path)
     sys.exit(0)
 
