@@ -23,12 +23,39 @@ load_dotenv()  # use os.getenv()
 
 
 FIELDS = [
+    'Employee Name',
+    'Job Name',
+    'Task Name',
+    'Total Hours',
+    'Fab',
+    'Paint',
+    'Canvas',
+    'Floor Boards',
+    'Outfitting',
 ]
 
 FORMATS = [
+    'General',
+    'General',
+    'General',
+    '0.00',
+    '0.00',
+    '0.00',
+    '0.00',
+    '0.00',
+    '0.00',
 ]
 
 WIDTHS = [
+    126,
+    52,
+    128,
+    70,
+    70,
+    70,
+    70,
+    70,
+    70,
 ]
 
 SQL = """
