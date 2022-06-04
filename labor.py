@@ -54,6 +54,17 @@ LEFT JOIN  task on tp.task_id = task.task_id
   --  AND  job.jobname IN ('18056 122')
 """
 
+def format_dates():
+    """return formated dates for prior month"""
+    today = datetime.now()
+    last = datetime(today.year, today.month, 1)-timedelta(days=1)
+    first = datetime(last.year, last.month, 1)
+    start = first - timedelta(days=365)
+    return (first.strftime('%B %Y'),
+	    start.strftime('%Y-%m-%d 00:00:00'),
+        last.strftime('%Y-%m-%d 23:59:59'))
+
+
 def get_boats(host, database, user, password, start, finish):
     """placeholder for pytds template"""
     with pytds.connect(server=host,
@@ -103,8 +114,8 @@ def cli(host, database, user, password, path):
     """Create spreadsheet with inventory items from fishbowl
     You will want to use: -e Upholstry -e Shipping -e Apparel
     """
-    start = '2021-05-01 00:00:00'
-    finish = '2022-05-31 23:59:59'
+    period, start, finish = format_dates()
+    print(period, start, finish)
     rows = get_boats(host, database, user, password, start, finish)
     _ = (path, rows)
     sys.exit(0)
