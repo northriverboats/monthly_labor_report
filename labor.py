@@ -90,6 +90,52 @@ def get_hulls(rows, month, year):
                     row[2] and
                     row[2][0] < '6'])
 
+def build_time(rows, hulls):
+  """build hulls/employees/hours for boats with last month activity"""
+  boats = {}
+  total = Decimal(0)
+  for row in rows:
+    hull = row[2]
+    dept = row[0]
+    employee = row[4] + ', ' + row[5]
+    if row[8]:
+        punch = Decimal(row[8])
+    else:
+        punch = Decimal(0)
+    type = row[10]
+    if hull not in hulls:
+        continue
+    if hull not in boats:
+        boats[hull] = {'total': Decimal(0)}
+    if dept not in boats[hull]:
+        boats[hull][dept] = {'total': Decimal(0)}
+    if employee not in boats[hull][dept]:
+        boats[hull][dept][employee] = Decimal(0)
+    if punch == 1:
+        boats[hull][dept][employee] -= punch
+        boats[hull][dept]['total'] -= punch
+        boats[hull]['total'] -= punch
+        total -= punch
+    else:
+        boats[hull][dept][employee] += punch
+        boats[hull][dept]['total'] += punch
+        boats[hull]['total'] += punch
+        total += punch
+
+    
+
+  for boat in sorted(boats):
+      print(boat)
+      for dept in boats[boat]:
+          if dept != 'total':
+              print(f"    {dept}")
+              for employee in boats[boat][dept]:
+                  if employee != 'total':
+                      print(f"        {employee:24.24}  {boats[boat][dept][employee]:9.2f}")
+              print(f"        {'TOTAL':24.24}  {boats[boat][dept]['total']:9.2f}")
+          print(f"    {'TOTAL':28.28}  {boats[boat]['total']:9.2f}")
+      print(f"{'TOTAL':32.32}  {total:9.2f}")
+
 
 @click.command()
 @click.option('--host',
@@ -133,7 +179,7 @@ def cli(host, database, user, password, path):
                                        and row[2]
                                        and row[2][0] < '6'])
     hulls = sorted(get_hulls(rows, month, year))
-    print(hulls)
+    build_time(rows, hulls)
     _ = (path)
     sys.exit(0)
 
