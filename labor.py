@@ -92,8 +92,7 @@ def get_hulls(rows, month, year):
 
 def build_time(rows, hulls):
   """build hulls/employees/hours for boats with last month activity"""
-  boats = {}
-  total = Decimal(0)
+  boats = {'total': Decimal(0)}
   for row in rows:
     hull = row[2]
     dept = row[0]
@@ -115,12 +114,12 @@ def build_time(rows, hulls):
         boats[hull][dept][employee] -= punch
         boats[hull][dept]['total'] -= punch
         boats[hull]['total'] -= punch
-        total -= punch
+        boats['total'] -= punch
     else:
         boats[hull][dept][employee] += punch
         boats[hull][dept]['total'] += punch
         boats[hull]['total'] += punch
-        total += punch
+        boats['total'] += punch
 
     
 
@@ -132,9 +131,9 @@ def build_time(rows, hulls):
               for employee in boats[boat][dept]:
                   if employee != 'total':
                       print(f"        {employee:24.24}  {boats[boat][dept][employee]:9.2f}")
-              print(f"        {'TOTAL':24.24}  {boats[boat][dept]['total']:9.2f}")
-          print(f"    {'TOTAL':28.28}  {boats[boat]['total']:9.2f}")
-      print(f"{'TOTAL':32.32}  {total:9.2f}")
+              print(f"        {'SUBTOTAL '+dept:24.24}  {boats[boat][dept]['total']:9.2f}")
+          print(f"    {'TOTAL '+boat:28.28}  {boats[boat]['total']:9.2f}")
+      print(f"{'GRAND TOTAL':32.32}  {total:9.2f}")
 
 
 @click.command()
