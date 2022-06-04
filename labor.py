@@ -62,7 +62,9 @@ def format_dates():
     start = first - timedelta(days=365)
     return (first.strftime('%B %Y'),
 	    start.strftime('%Y-%m-%d 00:00:00'),
-        last.strftime('%Y-%m-%d 23:59:59'))
+      last.strftime('%Y-%m-%d 23:59:59'),
+      last.month,
+      last.year)
 
 
 def get_boats(host, database, user, password, start, finish):
@@ -78,6 +80,16 @@ def get_boats(host, database, user, password, start, finish):
             _ = cur.execute(SQL % (start, finish))
             rows = cur.fetchall()
     return rows
+
+def get_hulls(rows, month, year):
+    """get a list of boats worked on during the month"""
+    return set([row[2] 
+                for row in rows 
+                if row[6].month == month and
+                    row[6].year == year and
+                    row[2] and
+                    row[2][0] < '6'])
+
 
 @click.command()
 @click.option('--host',
@@ -114,11 +126,17 @@ def cli(host, database, user, password, path):
     """Create spreadsheet with inventory items from fishbowl
     You will want to use: -e Upholstry -e Shipping -e Apparel
     """
-    period, start, finish = format_dates()
-    print(period, start, finish)
+    period, start, finish, month, year = format_dates()
     rows = get_boats(host, database, user, password, start, finish)
-    _ = (path, rows)
+    hulls = set([row[2] for row in rows if row[6].month == month
+                                       and row[6].year == year
+                                       and row[2]
+                                       and row[2][0] < '6'])
+    hulls = sorted(get_hulls(rows, month, year))
+    print(hulls)
+    _ = (path)
     sys.exit(0)
+
 
 
 if __name__ == "__main__":
