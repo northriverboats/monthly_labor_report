@@ -47,15 +47,15 @@ FORMATS = [
 ]
 
 WIDTHS = [
-    126,
-    52,
-    128,
-    70,
-    70,
-    70,
-    70,
-    70,
-    70,
+    26,
+    11,
+    24,
+    12,
+    12,
+    12,
+    12,
+    12,
+    12,
 ]
 
 SQL = """
@@ -122,7 +122,7 @@ def build_time(rows, hulls):
     boats = {'total': Decimal(0)}
     for row in rows:
       hull = row[2]
-      dept = row[0]
+      dept = row[11]
       employee = row[4] + ', ' + row[5]
       if row[8]:
           punch = Decimal(row[8])
@@ -148,25 +148,87 @@ def build_time(rows, hulls):
           boats[hull]['total'] += punch
           boats['total'] += punch
   
-    for boat in sorted(boats):
-        if boat != 'total':
-            print(boat)
-            for dept in boats[boat]:
-                if dept != 'total':
-                    print(f"    {dept}")
-                    for employee in boats[boat][dept]:
-                        if employee != 'total':
-                            print(f"        {employee:24.24}  {boats[boat][dept][employee]:9.2f}")
-                    print(f"        {'SUBTOTAL '+dept:24.24}  {boats[boat][dept]['total']:9.2f}")
-                print(f"    {'TOTAL '+boat:28.28}  {boats[boat]['total']:9.2f}")
-        print(f"{'GRAND TOTAL':32.32}  {boats['total']:9.2f}")
-
     return boats
 
 def write_sheet(boats):
     """write sheet to disk"""
     excel = ExcelOpenDocument()
     excel.new('test.xlsx')
+    title_font = excel.font(name='Calibri', size=11, bold=True)
+    body_font = excel.font(name='Calibri', size=11)
+
+    # set column widths
+    for column, width in enumerate(WIDTHS, start=65):
+         excel.set_width(chr(column), width)
+
+    # write column names
+    for column, field, format, width in zip(range(len(FIELDS)), FIELDS, FORMATS, WIDTHS):
+        excel.cell(row=1, column=column+1).value = field
+        excel.cell(row=1, column=column+1).font = title_font
+
+    row = 2
+    for boat in sorted(boats):
+        if boat != 'total':
+            dept_row = row - 1
+            for column, dept in [(5, '1 Boat Builder'),
+                                 (7, '2 Canvas and Upholstery'),
+                                 (6, '4 Paint'),
+                                 (8, '5 Outfitting - Floorboard'),
+                                 (9, '5 Outfitting')]:
+                if dept in boats[boat]:
+                    old_row = dept_row + 1
+                    dept_row += len(boats[boat][dept]) - 1
+                    # excel.cell(row=dept_row, column=column).value = boats[boat][dept]['total']
+                    excel.cell(row=dept_row, column=column).value = f"=SUM(D{old_row}:D{dept_row})"
+                    excel.cell(row=dept_row, column=column).font = body_font
+                    excel.cell(row=dept_row, column=column).number_format = r'0.00'
+            for dept in sorted(boats[boat]):
+                if dept != 'total':
+                    for employee in sorted(boats[boat][dept]):
+                        if employee != 'total':
+                            excel.cell(row=row, column=1).value = employee
+                            excel.cell(row=row, column=1).font = body_font
+                            excel.cell(row=row, column=2).value = boat
+                            excel.cell(row=row, column=2).font = body_font
+                            excel.cell(row=row, column=3).value = dept
+                            excel.cell(row=row, column=3).font = body_font
+                            excel.cell(row=row, column=4).value = boats[boat][dept][employee]
+                            excel.cell(row=row, column=4).font = body_font
+                            excel.cell(row=row, column=4).number_format = r'0.00'
+                            row += 1
+            row += 1
+
+    excel.cell(row=row, column=1).value = 'Totals'
+    excel.cell(row=row, column=1).font = title_font
+
+    excel.cell(row=row, column=4).value = f"=SUM(D2:D{row-2})"
+    excel.cell(row=row, column=4).font = title_font
+    excel.cell(row=row, column=4).number_format = r'0.00'
+
+    excel.cell(row=row, column=5).value = f"=SUM(E2:E{row-2})"
+    excel.cell(row=row, column=5).font = title_font
+    excel.cell(row=row, column=5).number_format = r'0.00'
+    
+    excel.cell(row=row, column=6).value = f"=SUM(F2:F{row-2})"
+    excel.cell(row=row, column=6).font = title_font
+    excel.cell(row=row, column=6).number_format = r'0.00'
+    
+    excel.cell(row=row, column=7).value = f"=SUM(G2:G{row-2})"
+    excel.cell(row=row, column=7).font = title_font
+    excel.cell(row=row, column=7).number_format = r'0.00'
+    
+    excel.cell(row=row, column=8).value = f"=SUM(H2:H{row-2})"
+    excel.cell(row=row, column=8).font = title_font
+    excel.cell(row=row, column=8).number_format = r'0.00'
+    
+    excel.cell(row=row, column=9).value = f"=SUM(I2:I{row-2})"
+    excel.cell(row=row, column=9).font = title_font
+    excel.cell(row=row, column=9).number_format = r'0.00'
+
+    excel.cell(row=row, column=10).value = f"=SUM(E{row}:I{row})"
+    excel.cell(row=row, column=10).font = title_font
+    excel.cell(row=row, column=10).number_format = r'0.00'
+
     excel.save()
 
 
@@ -205,7 +267,11 @@ def cli(host, database, user, password, path):
     """Create spreadsheet with inventory items from fishbowl
     You will want to use: -e Upholstry -e Shipping -e Apparel
     """
+    
     period, start, finish, month, year = format_dates()
+    start = '2021-03-01 00:00:00'
+    finish = '2022-03-31 23:59:59'
+    month = 3
     rows = get_boats(host, database, user, password, start, finish)
     hulls = set([row[2] for row in rows if row[6].month == month
                                        and row[6].year == year
@@ -215,8 +281,8 @@ def cli(host, database, user, password, path):
     boats = build_time(rows, hulls)
     write_sheet(boats)
     _ = (path)
+    
     sys.exit(0)
-
 
 
 if __name__ == "__main__":
