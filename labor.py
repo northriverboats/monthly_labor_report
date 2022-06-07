@@ -15,6 +15,7 @@ from datetime import datetime
 from datetime import timedelta
 from platform import system
 import click
+import PySimpleGUI as sg
 import pytds
 from dotenv import load_dotenv
 from excelopen import ExcelOpenDocument
@@ -81,9 +82,8 @@ LEFT JOIN  task on tp.task_id = task.task_id
   --  AND  job.jobname IN ('18056 122')
 """
 
-def format_dates():
+def format_dates(today):
     """return formated dates for prior month"""
-    today = datetime.now()
     last = datetime(today.year, today.month, 1)-timedelta(days=1)
     first = datetime(last.year, last.month, 1)
     start = first - timedelta(days=365)
@@ -232,6 +232,30 @@ def write_sheet(boats):
     excel.save()
 
 
+def make_window(theme):
+    sg.theme(theme)
+    layout = [
+        [sg.Combo(values=(
+          'May 2022',
+          'April 2022',
+          'March 2022',
+          ),
+          default_value='May 2022',
+          readonly=True,
+          k='-COMBO-'),
+        ],
+    ]
+    window = sg.Window(
+      'Monthly Labor Report Spredsheet Generator',
+      layout,
+      margins=(0,0),
+      use_custom_titlebar=True,
+      finalize=True,
+      keep_on_top=True,
+    )
+    window.set_min_size(window.size)
+    return window
+
 @click.command()
 @click.option('--host',
               '-h',
@@ -263,12 +287,23 @@ def write_sheet(boats):
               default='',
               help='Path to save file to'
               )
-def cli(host, database, user, password, path):
+def main(host, database, user, password, path):
     """Create spreadsheet with inventory items from fishbowl
     You will want to use: -e Upholstry -e Shipping -e Apparel
     """
+    window = make_window(sg.theme())
+
+    # This is an Event Loop 
+    while True:
+        event, values = window.read(timeout=100)
+        if event == sg.WIN_CLOSED:
+          break
+    window.close()
     
-    period, start, finish, month, year = format_dates()
+    
+    
+    """
+    period, start, finish, month, year = format_dates(datetime.now())
     start = '2021-03-01 00:00:00'
     finish = '2022-03-31 23:59:59'
     month = 3
@@ -281,9 +316,9 @@ def cli(host, database, user, password, path):
     boats = build_time(rows, hulls)
     write_sheet(boats)
     _ = (path)
-    
+    """
     sys.exit(0)
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
+    main()  # pylint: disable=no-value-for-parameter
