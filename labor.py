@@ -9,6 +9,7 @@ notes: build list of boats with punches in the last month
 """
 
 import os
+from re import I
 import sys
 from decimal import Decimal
 from datetime import datetime
@@ -93,6 +94,21 @@ def format_dates(today):
       last.month,
       last.year)
 
+def build_periods():
+    """retrun list of formatted dates"""
+    periods = {}
+    selections = ()
+
+    period, start, finish, month, year = format_dates(datetime.now())
+    selections = selections + (period, )
+    periods[period] = {'start': start, 'finish': finish, 'month': month, 'year': year}
+
+    for i in range(3):
+        period, start, finish, month, year = format_dates(datetime(year, month, 1))
+        selections = selections + (period, )
+        periods[period] = {'start': start, 'finish': finish, 'month': month, 'year': year}
+
+    return periods, selections
 
 def get_boats(host, database, user, password, start, finish):
     """placeholder for pytds template"""
@@ -232,26 +248,30 @@ def write_sheet(boats):
     excel.save()
 
 
-def make_window(theme):
+def make_window(theme, selections):
     sg.theme(theme)
     layout = [
-        [sg.Combo(values=(
-          'May 2022',
-          'April 2022',
-          'March 2022',
-          ),
-          default_value='May 2022',
-          readonly=True,
-          k='-COMBO-'),
+        [
+            sg.Combo(
+                values=selections,
+                default_value='May 2022',
+                readonly=True,
+                key='-COMBO-'
+            ),
+            sg.Button(
+                'Read',
+                key="-READ-"
+            ),
         ],
     ]
+
     window = sg.Window(
-      'Monthly Labor Report Spredsheet Generator',
-      layout,
-      margins=(0,0),
-      use_custom_titlebar=True,
-      finalize=True,
-      keep_on_top=True,
+        'Monthly Labor Report Spredsheet Generator',
+        layout,
+        margins=(0,0),
+        use_custom_titlebar=True,
+        finalize=True,
+        keep_on_top=True,
     )
     window.set_min_size(window.size)
     return window
@@ -291,13 +311,16 @@ def main(host, database, user, password, path):
     """Create spreadsheet with inventory items from fishbowl
     You will want to use: -e Upholstry -e Shipping -e Apparel
     """
-    window = make_window(sg.theme())
+    periods, selections = build_periods()
+    window = make_window(sg.theme(), selections)
 
     # This is an Event Loop 
     while True:
         event, values = window.read(timeout=100)
         if event == sg.WIN_CLOSED:
           break
+        elif event == '-READ-':
+            print(periods[values['-COMBO-']])
     window.close()
     
     
